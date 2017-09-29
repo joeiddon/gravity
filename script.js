@@ -4,18 +4,51 @@ ctx = cnvs.getContext("2d")
 cnvs.addEventListener("mousedown", mouseDown, false)
 
 function mouseDown(e){
-	window.addEventListener("mousemove", mouseMove, false);
-	window.addEventListener("mouseup", mouseUp, false);
-	cnvs.removeEventListener("mousedown", mouseDown, false);
+	if (e.offsetY > height - buttonHeight) {	//clicked on button
+		if (running){	//if was running simulation
+			console.log("was running, switching")
+			clearInterval(interval)
+			interval = setInterval(initUpdate, 10)
+			running = false
+		} else {		//if wasN'T running simulation
+			console.log("wasnt running, switching")
+			clearInterval(interval)
+			interval = setInterval(update, refreshRate)
+			running = true
+		}
+	} else if (running == false){
+		if (makingBall){
+			console.log("beggining initial radii drag", makingBall)
+			balls.push({
+				x: e.offsetX,
+				y: e.offsetY
+			})
+			window.addEventListener("mousemove", mouseMove, false);
+			window.addEventListener("mouseup", mouseUp, false);
+		}
+	}
 }
 function mouseUp(e) {
-	cnvs.addEventListener("mousedown", mouseDown, false);
-	window.removeEventListener("mouseup", mouseUp, false);
-	window.removeEventListener("mousemove", mouseMove, false);
+	var ball = balls[balls.length-1]
+	if (makingBall){
+		console.log("release radii drag", makingBall)
+		makingBall = false
+	} else {
+		console.log("released velocity point", makingBall)
+		makingBall = true
+		window.removeEventListener("mouseup", mouseUp, false);
+		window.removeEventListener("mousemove", mouseMove, false);
+	}
 }
 
 function mouseMove(e){
-	console.log(e.offsetX, e.offsetY)
+	var ball = balls[balls.length-1]
+	if (makingBall) {
+		ball.r = Math.sqrt(Math.pow(e.offsetX - ball.x, 2) + Math.pow(e.offsetY - ball.y, 2))
+	} else {
+		ball.vx = (e.offsetX - ball.x) / arrowScale
+		ball.vy = (e.offsetY - ball.y) / arrowScale
+	}
 }
 
 
@@ -34,6 +67,13 @@ var balls = []
 //variables
 refreshRate = 10
 var clear = true
+var makingBall = true
+var buttonHeight = 50
+var running = false
+var arrowScale = 100
+var interval = setInterval(initUpdate, 10)
+var gConstant = 10000
+
 /*
 var noBalls = +urlVariables[1]
 var radius = {min: +urlVariables[2], max: +urlVariables[3]} 			//min, max
@@ -44,6 +84,47 @@ var merging = (urlVariables[5] == "1")
 var spawn = {x: radius.max, y: radius.max,  w: width - radius.max, h: height - radius.max}	//limits for ball to spawn inside
 */
 
+function initUpdate(){
+	clearScreen()
+	for (b = 0 ; b < balls.length ; b ++){
+		ball = balls[b]
+		drawCircle(ball.x, ball.y, ball.r, "FFFFFF")// ball.c)
+		drawArrow(ball.x, ball.y, ball.x + ball.vx * arrowScale, ball.y + ball.vy * arrowScale, 22, 10)
+	}
+	drawButton()
+}
+
+function update(){
+	//ballMerges()
+	applyGravity()
+	updateBallPositions()
+	if (clear) clearScreen()
+	drawBalls()
+	drawButton()
+}
+
+function drawArrow(x1, y1, x2, y2, theta, l){
+	ctx.strokeStyle = "white"
+	ctx.strokeStyle = "white"
+	ctx.fillStyle = ctx.strokeStyle
+	ctx.lineWidth = 2
+
+	var alpha = theta - Math.atan2(x2-x1, y2-y1) * (180/Math.PI)
+	var beta = theta + Math.atan2(x2-x1, y2-y1) * (180/Math.PI)
+	var gamma = Math.atan2(x2-x1, y2-y1) * (180 / Math.PI)
+	
+	ctx.beginPath()
+	ctx.moveTo(x1, y1)
+	ctx.lineTo(x2 - l * Math.cos(theta*(Math.PI/180)) * Math.sin(gamma*(Math.PI/180)),
+	y2 - l * Math.cos(theta*(Math.PI/180)) * Math.cos(gamma*(Math.PI/180)))
+	ctx.stroke()
+	ctx.moveTo(x2 + l * Math.sin(alpha*(Math.PI/180)), y2 - l * Math.cos(alpha*(Math.PI/180)))
+	ctx.lineTo(x2, y2)
+	ctx.lineTo(x2 - l * Math.sin(beta*(Math.PI/180)), y2 - l * Math.cos(beta*(Math.PI/180)))
+	ctx.fill()
+	
+	ctx.lineWidth = 1
+}
 
 function randNum(min, max){					//returns random integer including min, excluding max
 	return Math.random() * (max - min) + min
@@ -81,21 +162,15 @@ function clearScreen(){
 	ctx.clearRect(0, 0, width, height)
 }
 
-function populateBalls(){
-	for (b = 0 ; b < noBalls ; b ++){
-		balls.push({x: randNum(spawn.x, spawn.w), y: randNum(spawn.y, spawn.h), vx: randNum(velocity.min, velocity.max), vy: randNum(velocity.min, velocity.max), r: randNum(radius.min, radius.max), c: randCol()})
-	}
-}
-
 function drawBalls(){
 	for (b = 0 ; b < balls.length ; b ++){
 		ball = balls[b]
-		drawCircle(ball.x, ball.y, ball.r, "FFFFFF")// ball.c)
+		drawCircle(ball.x, ball.y, ball.r, "FFFFFF")
 	}
 }
 
 function updateBallPositions(){
-	for (b = 0 ; b < noBalls ; b ++){
+	for (b = 0 ; b < balls.length ; b ++){
 		ball = balls[b]
 		ball.x += ball.vx
 		ball.y += ball.vy
@@ -148,8 +223,8 @@ function gravitationalAccel(m1, m2, r){
 }
 
 function applyGravity(){
-	for (b1 = 0 ; b1 < noBalls ; b1 ++ ){
-		for (b2 = b1 + 1 ; b2 < noBalls ; b2 ++){
+	for (b1 = 0 ; b1 < balls.length ; b1 ++ ){
+		for (b2 = b1 + 1 ; b2 < balls.length ; b2 ++){
 			distanceBetween = Math.sqrt((balls[b2].x - balls[b1].x) * (balls[b2].x - balls[b1].x) + (balls[b2].y - balls[b1].y) * (balls[b2].y - balls[b1].y))
 			xDistance = Math.abs(balls[b2].x - balls[b1].x)
 			yDistance = Math.abs(balls[b2].y - balls[b1].y)
@@ -176,23 +251,11 @@ function applyGravity(){
 }
 
 function drawButton(){
-	ctx.fillStyle = "rgba(255,0,0,0.5)"
-	ctx.fillRect(0, height - 50, width, height)
+	ctx.fillStyle = "rgba(255,50,60,0.5)"
+	ctx.fillRect(0, height - buttonHeight, width, height)
 	ctx.fillStyle = "rgba(255,255,255,0.5)"
-	
+	ctx.font = "50px monospace"
+	ctx.textAlign = "center"
+	ctx.fillText(running ? "stop" : "run", width/2, height-(buttonHeight/2) + 12.5)
 }
 
-
-function update(){
-	//ballMerges()
-	//applyGravity()
-	//updateBallPositions()
-	if (clear) clearScreen()
-	drawBalls()
-	drawButton()
-}
-
-//populateBalls();
-//balls = [{x: 50, y:150, vx: 3, vy: 0, r: 30}, {x: 200, y:100, vx: 0, vy: 0, r: 30}]
-
-setInterval(update, refreshRate)
