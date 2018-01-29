@@ -8,11 +8,10 @@ function mouseDown(e){
 		if (running){	//if was running simulation
 			console.log("was running, switching")
 			clearInterval(interval)
-			interval = setInterval(initUpdate, 10)
 			running = false
+            drawCurrentState()
 		} else {		//if wasN'T running simulation
 			console.log("wasnt running, switching")
-			clearInterval(interval)
 			interval = setInterval(update, refreshRate)
 			running = true
 		}
@@ -21,7 +20,8 @@ function mouseDown(e){
 			console.log("beggining initial radii drag", makingBall)
 			balls.push({
 				x: e.offsetX,
-				y: e.offsetY
+				y: e.offsetY,
+                r: 0.1 //minimum radii
 			})
 			window.addEventListener("mousemove", mouseMove, false);
 			window.addEventListener("mouseup", mouseUp, false);
@@ -49,6 +49,7 @@ function mouseMove(e){
 		ball.vx = (e.offsetX - ball.x) / arrowScale
 		ball.vy = (e.offsetY - ball.y) / arrowScale
 	}
+    drawCurrentState()
 }
 
 
@@ -61,7 +62,6 @@ function resize(){
 
 resize()
 
-//initialising array
 var balls = []
 
 //variables
@@ -71,20 +71,29 @@ var makingBall = true
 var buttonHeight = 50
 var running = false
 var arrowScale = 100
-var interval = setInterval(initUpdate, 10)
+var interval = 0
 var gConstant = 10000
 
-/*
-var noBalls = +urlVariables[1]
-var radius = {min: +urlVariables[2], max: +urlVariables[3]} 			//min, max
-var velocity = {min: -urlVariables[4], max: +urlVariables[4]}
-var gConstant = +urlVariables[0]				//global gravity
-var clear = (urlVariables[6] == "0")
-var merging = (urlVariables[5] == "1")
-var spawn = {x: radius.max, y: radius.max,  w: width - radius.max, h: height - radius.max}	//limits for ball to spawn inside
-*/
+drawButton()
+startUp()
 
-function initUpdate(){
+function startUp(){
+    lines = ["Welcome to my Gravity Simulation","",
+    "The simulation is entirely controlled",
+    "with your mouse.",
+    "To create a ball, drag from the center",
+    "to the circumference. Then click to set",
+    "its velocity.",
+    'Then hit the red "run" button to start',
+    "the simulation."]
+    ctx.textAlign = "left"
+    ctx.font = "20px monospace"
+    for (var l = 0; l < lines.length; l++){
+        ctx.fillText(lines[l], width/2 - 200, 200 + l * 20)
+    }
+}
+
+function drawCurrentState(){
 	clearScreen()
 	for (b = 0 ; b < balls.length ; b ++){
 		ball = balls[b]
@@ -128,11 +137,6 @@ function drawArrow(x1, y1, x2, y2, theta, l){
 
 function randNum(min, max){					//returns random integer including min, excluding max
 	return Math.random() * (max - min) + min
-}
-
-function randCol(){
-	colors = ['800000', '8B0000', 'B22222', 'FF0000', 'FA8072', 'FF6347', 'FF7F50', 'FF4500', 'D2691E', 'F4A460', 'FF8C00', 'FFA500', 'B8860B', 'DAA520', 'FFD700', '808000', 'FFFF00', '9ACD32', 'ADFF2F', '7FFF00', '7CFC00', '008000', '00FF00', '32CD32', '00FF7F', '00FA9A', '40E0D0', '20B2AA', '8D1CC"', '008080', '008B8B', '00FFFF', '00FFFF', '00CED1', '00BFFF', '1E90FF', '4169E1', '000080', '00008B', '0000CD', '0000FF', '8A2BE2', '9932CC', '9400D3', '800080', '8B008B', 'FF00FF', 'FF00FF', 'C71585', 'FF1493', 'F69B4"', 'DC143C', 'A52A2A', 'CD5C5C', 'BC8F8F', 'F08080', 'FFFAFA', 'FFE4E1', 'E9967A', 'FFA07A', 'A0522D', 'FFF5EE', '8B4513', 'FFDAB9', 'CD853F', 'FAF0E6', 'FFE4C4', 'DEB887', 'D2B48C', 'FAEBD7', 'FFDEAD', 'FFEBCD', 'FFEFD5', 'FFE4B5', 'F5DEB3', 'FDF5E6', 'FFFAF0', 'FFF8DC', 'F0E68C', 'FFFACD', 'EEE8AA', 'BDB76B', 'F5F5DC', 'FAFAD2', 'FFFFE0', 'FFFFF0', '6B8E23', '556B2F', '8FBC8F', '006400', '228B22', '90EE90', '98FB98', 'F0FFF0', '2E8B57', '3CB371', 'F5FFFA', '66CDAA', '7FFFD4', '2F4F4F', 'AFEEEE', 'E0FFFF', 'F0FFFF', '5F9EA0', 'B0E0E6', 'ADD8E6', '87CEEB', '87CEFA', '4682B4', 'F0F8FF', '708090', '778899', 'B0C4DE', '6495ED', 'E6E6FA', 'F8F8FF', '191970', '6A5ACD', '483D8B', '7B68EE', '9370DB', '4B0082', 'BA55D3', 'DDA0DD', 'EE82EE', 'D8BFD8', 'DA70D6', 'FFF0F5', 'DB7093', 'FFC0CB', 'FFB6C1', '000000', '696969', '808080', 'A9A9A9', 'C0C0C0', 'D3D3D3', 'DCDCDC', 'F5F5F5', 'FFFFFF']
-	return colors[parseInt(randNum(0, colors.length))]
 }
 
 function overlap(x1, y1, x2, y2, r1, r2){
