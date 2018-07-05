@@ -1,5 +1,6 @@
-# GravitySimulation
+Gravity
+=======
 
-Using similiar code to the previous gravity simulation, just this allows you to enter where the masses are and set their starting trajectories.
+#### The aim of this project is to allow a user to easily set the masses of objects and their trajectories and observe the conditions required for orbits and other setups (basically just cool experimentation).
 
-Have a go [here](http://joeiddon.me/GravitySimulation/).
+Have a go [here](http://joeiddon.github.io/gravity).
